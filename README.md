@@ -1,1 +1,80 @@
-# -linknest-
+# 拾光导航 · LinkNest
+
+把好用的网站、常用工具和下一次灵感，收在一个安静的个人空间。
+
+一个无需安装依赖、无需后端的个人导航站。浅米色与森林绿主题，适配桌面和手机。
+
+项目仓库：[CX330FGT/-linknest-](https://github.com/CX330FGT/-linknest-)。
+
+## 已实现
+
+- 15 个示例网站，5 个初始分类，可在添加网站时创建自定义分类。
+- 网站新增、编辑、删除，重复地址提示，常用收藏切换。
+- 按名称、网址、描述与分类搜索；多个关键词同时匹配；按 `/` 聚焦搜索。
+- 浅色、深色主题；首次访问跟随系统，之后记住选择。
+- 浏览器本地保存，多个同源标签页之间同步变更。
+- JSON 备份导出、校验与恢复，恢复前确认替换范围。
+- 地址协议白名单、纯文本渲染、存储失败提示。
+- 键盘操作、弹窗焦点约束、移动端布局与减少动画偏好支持。
+
+## 本地运行
+
+安装 Node.js 22 或更新版本，在项目目录运行：
+
+```sh
+node scripts/serve.mjs
+```
+
+打开 http://127.0.0.1:4173 。请通过 HTTP 服务访问，直接双击 HTML 可能会被浏览器阻止加载模块。
+
+```sh
+node --test
+node --check dist/app.js
+node --check dist/core.js
+```
+
+无需运行依赖安装命令。`dist/` 就是可以部署的完整网站。
+
+## 数据和隐私
+
+收藏保存在浏览器 `localStorage`，不会上传到 GitHub 或服务器。不同设备、浏览器及不同域名的收藏互不共享；清除浏览器数据会清除收藏。请使用「导出我的收藏」定期备份，迁移时用「导入备份」恢复。备份恢复会替换当前收藏，不会自动合并。
+
+站点不加载第三方字体、图标或统计脚本。只有点击外部网站时才会访问该网站。预置网站只是可编辑的示例，不保证在每个地区均可访问。
+
+导入上限为 2 MB、2000 条收藏；仅接受版本 1 的 LinkNest JSON 备份。暂不支持浏览器书签 HTML 导入、跨设备同步、账号登录或自动抓取网站信息。
+
+## 发布到 GitHub
+
+本项目的 GitHub 仓库为 `CX330FGT/-linknest-`。克隆仓库后可本地运行；后续修改使用自己的 GitHub 登录推送：
+
+```sh
+git clone https://github.com/CX330FGT/-linknest-.git
+cd ./-linknest-
+node scripts/serve.mjs
+```
+
+修改并提交后：
+
+```sh
+git push -u origin main
+```
+
+仓库发布与网站上线是两个独立步骤。此仓库由拥有者创建为公开仓库，程序不会把浏览器中的个人收藏上传到仓库。
+
+仓库内有测试工作流，以及一个手动触发的 Pages 部署工作流。如果要上线：在仓库 Settings → Pages 中选择 GitHub Actions 为构建来源，然后在 Actions 中手动运行「Deploy website」。私有仓库的 Pages 可用性取决于账号方案；请在 GitHub 页面中确认访问范围。工作流不会自行修改仓库可见性。
+
+所有页面资源使用相对路径，兼容项目子路径部署。启用 Pages 后，预期地址为 `https://cx330fgt.github.io/-linknest-/`；该地址只有部署成功后才可访问。
+
+## 目录
+
+```text
+dist/                 可直接部署的 HTML、CSS、JavaScript 和图标
+  core.js             数据模型、校验、搜索和初始数据
+  app.js              页面交互与本地存储
+scripts/serve.mjs     本地静态服务
+test/core.test.js    核心规则测试
+docs/architecture.md 需求与架构决策
+.github/workflows/   自动测试与手动网站部署
+```
+
+详细设计见 [架构说明](docs/architecture.md)。

@@ -1,0 +1,9 @@
+{
+  "name": "linknest",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "拾光导航：轻量、私密、可备份的个人导航站",
+  "scripts": { "dev": "node scripts/serve.mjs", "test": "node --test", "check": "node --check dist/app.js && node --check dist/core.js" },
+  "engines": { "node": ">=22" }
+}
