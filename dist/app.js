@@ -1,4 +1,4 @@
-import { CATEGORIES, STORAGE_KEY, normalizeUrl, validateBookmark, parseBackup, serialize, filterBookmarks, createSeeds } from './core.js';
+import { CATEGORIES, STORAGE_KEY, normalizeUrl, validateBookmark, parseBackup, serialize, filterBookmarks, createSeeds, mergeBookmarks } from './core.js';
 
 const $ = selector => document.querySelector(selector);
 let bookmarks = createSeeds();
@@ -190,12 +190,21 @@ $('#import-file').addEventListener('change', async event => {
   try {
     if (file.size > 2_000_000) throw new Error('备份不能超过 2 MB');
     const next = parseBackup(await file.text());
-    if (!await confirmAction('恢复备份', `备份包含 ${next.length} 个网站。确认后会替换当前收藏，建议取消后先导出当前数据。`)) return;
-    if (!persist(next, true)) return;
+    const dialog = $('#import-dialog');
+    const snapshot = bookmarks;
+    $('#import-summary').textContent = `备份有 ${next.length} 个网站，当前有 ${bookmarks.length} 个。合并会保留现有内容并跳过重复网址；替换会移除当前收藏。`;
+    $('#merge-import').disabled = storageBlocked;
+    dialog.returnValue = 'cancel';
+    dialog.showModal();
+    const mode = await new Promise(resolve => dialog.addEventListener('close', () => resolve(dialog.returnValue), { once: true }));
+    if (!['merge', 'replace'].includes(mode)) return;
+    if (snapshot !== bookmarks) { toast('收藏已在其他标签页改变，请重新选择备份。'); return; }
+    const merged = mode === 'merge' ? mergeBookmarks(bookmarks, next) : null;
+    if (!persist(merged ? merged.bookmarks : next, mode === 'replace')) return;
     category = 'all';
     $('#search').value = '';
     render();
-    toast(`已恢复 ${next.length} 个网站`);
+    toast(merged ? `已添加 ${merged.added} 个网站，跳过 ${merged.skipped} 个重复网址` : `已恢复 ${next.length} 个网站`);
   } catch (error) { toast(error.message || '备份导入失败，现有收藏未改变'); }
 });
 window.addEventListener('storage', event => {
@@ -204,6 +213,7 @@ window.addEventListener('storage', event => {
     bookmarks = event.newValue ? parseBackup(event.newValue) : createSeeds();
     storageBlocked = false;
     if ($('#editor').open) $('#editor').close();
+    if ($('#import-dialog').open) $('#import-dialog').close('cancel');
     render();
     toast('已同步其他标签页中的收藏变更');
   } catch { storageBlocked = true; toast('另一标签页的收藏数据格式异常，已暂停保存'); }

@@ -1,6 +1,7 @@
 {
   "name": "linknest",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "description": "拾光导航：轻量、私密、可备份的个人导航站",

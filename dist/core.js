@@ -13,6 +13,7 @@ function bounded(value, field, limit, required = true) {
 }
 export function validateBookmark(item) {
   if (!item || typeof item !== 'object') throw new Error('收藏格式不正确');
+  if (item.pinned !== undefined && typeof item.pinned !== 'boolean') throw new Error('常用收藏标记必须是布尔值');
   return {
     id: bounded(item.id, '标识', 100),
     title: bounded(item.title, '名称', 60),
@@ -23,7 +24,7 @@ export function validateBookmark(item) {
   };
 }
 export function parseBackup(text) {
-  if (text.length > 2_000_000) throw new Error('备份不能超过 2 MB');
+  if (typeof text !== 'string' || new TextEncoder().encode(text).length > 2_000_000) throw new Error('备份不能超过 2 MB');
   let data;
   try { data = JSON.parse(text); } catch { throw new Error('文件不是有效的 JSON 备份'); }
   if (data?.version !== 1 || !Array.isArray(data.bookmarks) || data.bookmarks.length > 2000) throw new Error('备份版本不支持，或收藏超过 2000 条');
@@ -32,7 +33,33 @@ export function parseBackup(text) {
   return bookmarks;
 }
 export function serialize(bookmarks) {
-  return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), bookmarks }, null, 2);
+  const text = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), bookmarks }, null, 2);
+  parseBackup(text);
+  return text;
+}
+export function mergeBookmarks(current, incoming) {
+  const existing = parseBackup(serialize(current));
+  const imported = parseBackup(serialize(incoming));
+  const urls = new Set(existing.map(item => item.url));
+  const ids = new Set(existing.map(item => item.id));
+  const reserved = new Set([...ids, ...imported.map(item => item.id)]);
+  let added = 0, skipped = 0, renamed = 0, counter = 0;
+  const result = [...existing];
+  for (const item of imported) {
+    if (urls.has(item.url)) { skipped++; continue; }
+    let id = item.id;
+    if (ids.has(id)) {
+      do { id = `import-${++counter}`; } while (reserved.has(id));
+      reserved.add(id);
+      renamed++;
+    }
+    result.push({ ...item, id });
+    urls.add(item.url);
+    ids.add(id);
+    added++;
+  }
+  serialize(result);
+  return { bookmarks: result, added, skipped, renamed };
 }
 export function filterBookmarks(bookmarks, { category = 'all', query = '' } = {}) {
   const terms = query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);

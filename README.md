@@ -6,6 +6,10 @@
 
 项目仓库：[CX330FGT/-linknest-](https://github.com/CX330FGT/-linknest-)。
 
+MIT 开源 · 零运行时依赖 · 默认本地数据 · 可自行静态托管。
+
+这是一个早期项目，当前没有可核验的规模化采用或月下载量数据。项目希望为个人工具开发者提供可审查的本地数据管理、备份迁移和输入校验参考；这属于设计价值，不代表已经成为生态基础设施。
+
 ## 已实现
 
 - 15 个示例网站，5 个初始分类，可在添加网站时创建自定义分类。
@@ -13,7 +17,7 @@
 - 按名称、网址、描述与分类搜索；多个关键词同时匹配；按 `/` 聚焦搜索。
 - 浅色、深色主题；首次访问跟随系统，之后记住选择。
 - 浏览器本地保存，多个同源标签页之间同步变更。
-- JSON 备份导出、校验与恢复，恢复前确认替换范围。
+- JSON 备份导出、校验与预览，支持合并或替换；合并自动跳过重复网址并保留现有编辑。
 - 地址协议白名单、纯文本渲染、存储失败提示。
 - 键盘操作、弹窗焦点约束、移动端布局与减少动画偏好支持。
 
@@ -37,7 +41,7 @@ node --check dist/core.js
 
 ## 数据和隐私
 
-收藏保存在浏览器 `localStorage`，不会上传到 GitHub 或服务器。不同设备、浏览器及不同域名的收藏互不共享；清除浏览器数据会清除收藏。请使用「导出我的收藏」定期备份，迁移时用「导入备份」恢复。备份恢复会替换当前收藏，不会自动合并。
+收藏保存在浏览器 `localStorage`，不会上传到 GitHub 或服务器。不同设备、浏览器及不同域名的收藏互不共享；清除浏览器数据会清除收藏。请使用「导出我的收藏」定期备份，迁移时用「导入备份」选择合并或替换。合并会保留当前项，规范化后相同网址只保留一次；查询参数和片段不同的地址不会被粗略合并。替换则会移除当前收藏。
 
 站点不加载第三方字体、图标或统计脚本。只有点击外部网站时才会访问该网站。预置网站只是可编辑的示例，不保证在每个地区均可访问。
 
@@ -78,3 +82,17 @@ docs/architecture.md 需求与架构决策
 ```
 
 详细设计见 [架构说明](docs/architecture.md)。
+
+## 复用与参与
+
+`dist/core.js` 的 `parseBackup`、`mergeBookmarks` 和 `filterBookmarks` 可在浏览器或 Node.js 中导入使用。它们不依赖 DOM、网络或存储。也可以用以下命令离线检查备份，输出仅包含数量和校验结果，不输出收藏内容：
+
+```sh
+node scripts/validate-backup.mjs your-backup.json
+```
+
+阅读 [贡献指南](CONTRIBUTING.md)、[安全政策](SECURITY.md)、[路线图](ROADMAP.md) 和 [更新记录](CHANGELOG.md)。API 维护自动化目前只是 [额度使用计划](docs/api-credits-plan.md)，未接入产品，也没有模型性能或节省工时数据。
+
+## English overview
+
+LinkNest is an early-stage, MIT-licensed, local-first bookmark dashboard with no runtime dependencies. It offers category search, favorites, light/dark themes, JSON backup, and non-destructive merge import. The data layer is reusable in browsers and Node.js. Bookmarks stay in the user's browser; there is no telemetry or API requirement. Download counts and broad adoption have not been established. Contributions and reproducible bug reports are welcome; see CONTRIBUTING.md and SECURITY.md.

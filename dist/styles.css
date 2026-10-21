@@ -8,4 +8,5 @@
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 .sidebar nav{min-height:0;overflow:auto}.topbar>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.top-actions{flex-shrink:0}
 :root{background:var(--bg);color:var(--ink)}
+#import-summary,.import-tip{font-size:13px;line-height:1.8;color:var(--muted)}button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:620px){#export-mobile{display:block}.top-actions{gap:2px}.topbar{gap:8px}.top-actions .quiet-button{padding:8px 5px}}
