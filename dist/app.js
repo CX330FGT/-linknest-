@@ -1,5 +1,6 @@
 import { STORAGE_KEY, normalizeUrl, validateBookmark, parseBackup, serialize, filterBookmarks, createSeeds, mergeBookmarks } from './core.js';
 import { RESEARCH_CATEGORIES, AI_GROUPS, createCatalog } from './catalog.js';
+import { siteIconUrl } from './icons.js';
 
 const $ = selector => document.querySelector(selector);
 $('#cards').before($('#research-panels').content.cloneNode(true));
@@ -106,8 +107,18 @@ function renderCards() {
     link.rel = 'noopener noreferrer';
     link.setAttribute('aria-label', `${item.title}（在新标签页打开）`);
     const top = element('div', 'card-top');
-    const icon = element('span', 'site-icon', Array.from(item.title)[0].toLocaleUpperCase());
+    const icon = element('span', 'site-icon', '↗');
     icon.setAttribute('aria-hidden', 'true');
+    const favicon = document.createElement('img');
+    favicon.alt = '';
+    favicon.width = 28;
+    favicon.height = 28;
+    favicon.decoding = 'async';
+    favicon.referrerPolicy = 'no-referrer';
+    favicon.addEventListener('load', () => icon.classList.add('has-image'));
+    favicon.addEventListener('error', () => { favicon.remove(); icon.classList.remove('has-image'); }, { once: true });
+    favicon.src = siteIconUrl(item.url);
+    icon.append(favicon);
     const text = element('div', 'site-text');
     text.append(element('h3', 'card-title', item.title), element('div', 'site-domain', new URL(item.url).hostname.replace(/^www\./, '')));
     top.append(icon, text);
