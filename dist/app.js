@@ -1,8 +1,24 @@
-import { CATEGORIES, STORAGE_KEY, normalizeUrl, validateBookmark, parseBackup, serialize, filterBookmarks, createSeeds, mergeBookmarks } from './core.js';
+import { STORAGE_KEY, normalizeUrl, validateBookmark, parseBackup, serialize, filterBookmarks, createSeeds, mergeBookmarks } from './core.js';
+import { RESEARCH_CATEGORIES, AI_GROUPS, createCatalog } from './catalog.js';
 
 const $ = selector => document.querySelector(selector);
+$('#cards').before($('#research-panels').content.cloneNode(true));
+for (const [name, title, placeholder] of [['subcategory', '子分类（选填）', '例如：物理与科学机器学习'], ['tags', '研究标签（选填，逗号分隔）', '例如：PINNs，参数识别，代理模型']]) {
+  const label = document.createElement('label');
+  label.textContent = title;
+  const input = document.createElement('input');
+  input.name = name;
+  input.maxLength = name === 'tags' ? 371 : 30;
+  input.placeholder = placeholder;
+  label.append(input);
+  $('#bookmark-form .checkbox').before(label);
+}
 let bookmarks = createSeeds();
 let category = 'all';
+let subcategory = '';
+let view = 'library';
+try { if (sessionStorage.getItem('linknest.view') === 'personal') view = 'personal'; } catch { /* Fall back to the research directory. */ }
+const catalog = createCatalog();
 let editingId = null;
 let storageBlocked = false;
 let toastTimer;
@@ -34,23 +50,25 @@ function persist(next, recovery = false) {
     return false;
   }
 }
-const symbols = { all: '▦', pinned: '☆', '开发工具': '⌘', '设计灵感': '◇', '效率办公': '▤', '学习阅读': '▧', '生活日常': '☷' };
-function categories() { return [...new Set([...CATEGORIES, ...bookmarks.map(item => item.category)])]; }
+const symbols = { all: '▦', pinned: '☆', 'AI 与智能科研': '✦', '文献检索': '⌕', '仿真与建模': '◇', '编程与数值计算': '⌘' };
+function pool() { return view === 'library' ? catalog : bookmarks; }
+function categories() { return view === 'library' ? RESEARCH_CATEGORIES : [...new Set([...RESEARCH_CATEGORIES, ...bookmarks.map(item => item.category)])]; }
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
 }
-function chooseCategory(next) { category = next; render(); }
+function chooseCategory(next) { category = next; subcategory = ''; render(); }
+function chooseView(next) { view = next; category = 'all'; subcategory = ''; $('#search').value = ''; render(); }
 function renderNavigation() {
   const navigation = $('#navigation');
   const filters = $('#filters');
   navigation.replaceChildren();
   filters.replaceChildren();
-  const entries = [['all', '全部网站'], ['pinned', '常用收藏'], ...categories().map(name => [name, name])];
+  const entries = [['all', '全部网站'], ...(view === 'personal' ? [['pinned', '常用收藏']] : []), ...categories().map(name => [name, name])];
   for (const [value, label] of entries) {
-    const count = filterBookmarks(bookmarks, { category: value }).length;
+    const count = filterBookmarks(pool(), { category: value }).length;
     const button = element('button', `nav-button${category === value ? ' active' : ''}`);
     button.append(element('span', 'nav-symbol', symbols[value] ?? '◇'), element('span', 'nav-text', label), element('span', 'nav-count', count));
     button.setAttribute('aria-pressed', String(category === value));
@@ -71,7 +89,7 @@ function action(label, text, callback, className = '') {
 }
 function renderCards() {
   const query = $('#search').value;
-  const visible = filterBookmarks(bookmarks, { category, query });
+  const visible = filterBookmarks(pool(), { category, subcategory, query });
   $('#cards').replaceChildren();
   const title = category === 'all' ? '全部网站' : category === 'pinned' ? '常用收藏' : category;
   $('#breadcrumb').textContent = title;
@@ -94,9 +112,24 @@ function renderCards() {
     text.append(element('h3', 'card-title', item.title), element('div', 'site-domain', new URL(item.url).hostname.replace(/^www\./, '')));
     top.append(icon, text);
     link.append(top, element('p', 'card-description', item.description || '为下一次探索，留个入口。'));
+    if (item.tags?.length) {
+      const tags = element('div', 'resource-tags');
+      for (const tag of item.tags) tags.append(element('span', '', tag));
+      link.append(tags);
+    }
     const bottom = element('div', 'card-bottom');
     const actions = element('div', 'card-actions');
-    actions.append(
+    if (view === 'library') {
+      const saved = bookmarks.some(bookmark => bookmark.url === item.url);
+      const add = action(saved ? `已收藏：${item.title}` : `加入收藏：${item.title}`, saved ? '已收藏 ✓' : '＋ 收藏', () => {
+        try {
+          const merged = mergeBookmarks(bookmarks, [item]);
+          if (persist(merged.bookmarks)) { render(); toast(`已收藏「${item.title}」`); }
+        } catch (error) { toast(error.message || '无法加入收藏'); }
+      });
+      add.disabled = saved;
+      actions.append(add);
+    } else actions.append(
       action(`${item.pinned ? '取消常用' : '设为常用'}：${item.title}`, item.pinned ? '★' : '☆', () => {
         if (persist(bookmarks.map(bookmark => bookmark.id === item.id ? { ...bookmark, pinned: !bookmark.pinned } : bookmark))) render();
       }, item.pinned ? 'pinned' : ''),
@@ -107,12 +140,29 @@ function renderCards() {
         }
       }),
     );
-    bottom.append(element('span', 'category-tag', item.category), actions);
+    bottom.append(element('span', 'category-tag', item.subcategory || item.category), actions);
     card.append(link, bottom);
     $('#cards').append(card);
   }
 }
-function render() { renderNavigation(); renderCards(); }
+function render() {
+  try { sessionStorage.setItem('linknest.view', view); } catch { /* View switching still works. */ }
+  for (const [id, value] of [['#library-view', 'library'], ['#personal-view', 'personal']]) {
+    $(id).classList.toggle('active', view === value);
+    $(id).setAttribute('aria-pressed', String(view === value));
+  }
+  $('#collection-note').textContent = view === 'library' ? '精选科研入口 · 一键加入我的收藏' : '你的编辑与收藏，保存在当前浏览器';
+  $('#ai-subfilters').replaceChildren();
+  $('#ai-panel').hidden = category !== 'AI 与智能科研';
+  if (category === 'AI 与智能科研') for (const group of ['', ...AI_GROUPS]) {
+    const button = element('button', `filter${subcategory === group ? ' active' : ''}`, group || '全部 AI 资源');
+    button.setAttribute('aria-pressed', String(subcategory === group));
+    button.addEventListener('click', () => { subcategory = group; render(); });
+    $('#ai-subfilters').append(button);
+  }
+  $('#campus-tip').hidden = category !== '校园与课题组';
+  renderNavigation(); renderCards();
+}
 function openEditor(item = null) {
   if (!item && bookmarks.length >= 2000) { toast('最多支持 2000 条收藏，请先整理或导出备份。'); return; }
   editingId = item?.id ?? null;
@@ -121,7 +171,8 @@ function openEditor(item = null) {
   $('#editor-title').textContent = item ? '编辑网站' : '添加网站';
   $('#form-error').textContent = '';
   $('#categories').replaceChildren(...categories().map(name => { const option = document.createElement('option'); option.value = name; return option; }));
-  for (const key of ['title', 'url', 'description']) form.elements.namedItem(key).value = item?.[key] ?? '';
+  for (const key of ['title', 'url', 'description', 'subcategory']) form.elements.namedItem(key).value = item?.[key] ?? '';
+  form.elements.namedItem('tags').value = (item?.tags ?? []).join('，');
   form.elements.namedItem('category').value = item?.category ?? (['all', 'pinned'].includes(category) ? '开发工具' : category);
   form.elements.namedItem('pinned').checked = item?.pinned ?? false;
   $('#editor').showModal();
@@ -138,18 +189,25 @@ $('#bookmark-form').addEventListener('submit', event => {
   event.preventDefault();
   const form = event.currentTarget;
   try {
-    const item = validateBookmark({ id: editingId ?? crypto.randomUUID(), title: form.elements.namedItem('title').value, url: normalizeUrl(form.elements.namedItem('url').value), category: form.elements.namedItem('category').value, description: form.elements.namedItem('description').value, pinned: form.elements.namedItem('pinned').checked });
+    const group = form.elements.namedItem('subcategory').value.trim();
+    const tags = form.elements.namedItem('tags').value.split(/[,，]/).map(tag => tag.trim()).filter(Boolean);
+    const item = validateBookmark({ id: editingId ?? crypto.randomUUID(), title: form.elements.namedItem('title').value, url: normalizeUrl(form.elements.namedItem('url').value), category: form.elements.namedItem('category').value, description: form.elements.namedItem('description').value, pinned: form.elements.namedItem('pinned').checked, ...(group ? { subcategory: group } : {}), ...(tags.length ? { tags } : {}) });
     if (bookmarks.some(bookmark => bookmark.id !== item.id && bookmark.url === item.url)) throw new Error('这个网站已经收藏过了，可以直接编辑已有收藏。');
     const next = editingId ? bookmarks.map(bookmark => bookmark.id === editingId ? item : bookmark) : [...bookmarks, item];
     if (!persist(next)) return;
     $('#editor').close();
+    view = 'personal';
     category = 'all';
+    subcategory = '';
     $('#search').value = '';
     render();
     toast(editingId ? '修改已保存' : '新网站已加入收藏');
   } catch (error) { $('#form-error').textContent = error.message || '请检查填写内容'; }
 });
 $('#add').addEventListener('click', () => openEditor());
+$('#library-view').addEventListener('click', () => chooseView('library'));
+$('#personal-view').addEventListener('click', () => chooseView('personal'));
+$('#add-campus').addEventListener('click', () => openEditor());
 for (const id of ['#close-editor', '#cancel-editor']) $(id).addEventListener('click', () => $('#editor').close());
 $('#search').addEventListener('input', renderCards);
 $('#clear-search').addEventListener('click', () => { $('#search').value = ''; chooseCategory('all'); });
@@ -201,7 +259,9 @@ $('#import-file').addEventListener('change', async event => {
     if (snapshot !== bookmarks) { toast('收藏已在其他标签页改变，请重新选择备份。'); return; }
     const merged = mode === 'merge' ? mergeBookmarks(bookmarks, next) : null;
     if (!persist(merged ? merged.bookmarks : next, mode === 'replace')) return;
+    view = 'personal';
     category = 'all';
+    subcategory = '';
     $('#search').value = '';
     render();
     toast(merged ? `已添加 ${merged.added} 个网站，跳过 ${merged.skipped} 个重复网址` : `已恢复 ${next.length} 个网站`);

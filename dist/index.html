@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="拾光导航 LinkNest，把常用网站和灵感收在一处。支持分类、搜索、本地收藏与备份。">
+  <meta name="description" content="面向力学研究生的科研导航，涵盖文献、仿真、实验、论文写作与 AI 科研工具。支持个人收藏、分类搜索与本地备份。">
   <meta name="color-scheme" content="light dark">
   <title>拾光导航 · LinkNest</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
@@ -22,14 +22,16 @@
     <header class="topbar"><span>我的导航 <span class="crumb">/</span> <span id="breadcrumb">全部网站</span></span><div class="top-actions"><span class="local-badge"><i></i> 本地保存</span><button id="theme" class="icon-button" aria-label="切换深色主题" title="切换主题">◐</button><button id="export-mobile" class="quiet-button mobile-only">导出</button><button id="import" class="quiet-button">导入备份</button></div></header>
     <main id="main">
       <section class="hero"><div class="eyebrow"><span></span> A LITTLE SPACE, FOR YOUR INTERNET</div><p id="today" class="date"></p><h1>好用的网站，<br>都在<span>这里。</span></h1><p class="hero-description">少一点寻找，多一点专注。<br class="mobile-only">让每一次出发，都有方向。</p><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="art-center">↗</div><span class="art-spark spark-one">✦</span><span class="art-spark spark-two">+</span><div class="art-note">CURATED BY YOU</div></div></section>
-      <div class="search-row"><label class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索网站、描述或分类…" aria-label="搜索网站" autocomplete="off"><kbd>/</kbd></label><button id="add" class="primary-button"><span>＋</span> 添加网站</button></div>
+      <div class="view-switch" aria-label="资源范围"><button id="library-view" class="active" aria-pressed="true">科研资源库</button><button id="personal-view" aria-pressed="false">我的收藏</button><span>力学研究生的科研工作台</span></div>
+      <div class="search-row"><label class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索网站、研究方向或 PINNs…" aria-label="搜索网站" autocomplete="off"><kbd>/</kbd></label><button id="add" class="primary-button"><span>＋</span> 添加网站</button></div>
       <section class="collection" aria-labelledby="collection-title"><div class="section-heading"><div><span class="section-kicker">YOUR COLLECTION</span><h2 id="collection-title">全部网站 <span id="result-count"></span></h2></div><span id="collection-note">把值得再来的地方，留在这里</span></div><div id="filters" class="filters" aria-label="快捷分类"></div><div id="cards" class="cards"></div><div id="empty" class="empty" hidden><span>⌕</span><h3>这里还没有匹配的网站</h3><p>试试其他关键词，或添加一个新的收藏。</p><button id="clear-search" class="quiet-button">查看全部网站</button></div></section>
-      <footer><span><b>LinkNest</b> · 为你的每一次探索，留一扇门。</span><span>收藏你的互联网 <span class="footer-star">✦</span></span></footer>
+      <footer><span><b>LinkNest</b> · 为你的每一次探索，留一扇门。</span><span>力学 × AI × 科研 <span class="footer-star">✦</span></span></footer>
     </main>
   </div>
   <dialog id="editor"><form id="bookmark-form"><div class="dialog-heading"><div><span class="section-kicker">MAKE ROOM FOR SOMETHING GOOD</span><h2 id="editor-title">添加网站</h2></div><button class="icon-button" type="button" id="close-editor" aria-label="关闭">×</button></div><label>网站名称<input name="title" required maxlength="60" placeholder="例如：我的灵感库"></label><label>网站地址<input name="url" required maxlength="2048" placeholder="https://example.com" inputmode="url"></label><label>分类<input name="category" required maxlength="30" list="categories" placeholder="选择或输入新分类"><datalist id="categories"></datalist></label><label>一句话描述<textarea name="description" maxlength="180" rows="2" placeholder="为什么想把它留在这里？"></textarea></label><label class="checkbox"><input name="pinned" type="checkbox"> 加入常用收藏</label><p id="form-error" class="form-error" role="alert"></p><div class="dialog-actions"><button id="cancel-editor" type="button" class="quiet-button">取消</button><button class="primary-button" type="submit">保存网站</button></div></form></dialog>
   <dialog id="confirmation"><form method="dialog"><h2 id="confirm-title">确认操作</h2><p id="confirm-message"></p><div class="dialog-actions"><button value="cancel" class="quiet-button">取消</button><button value="confirm" class="primary-button">确认</button></div></form></dialog>
   <input id="import-file" type="file" accept="application/json,.json" hidden>
+  <template id="research-panels"><section id="ai-panel" class="resource-panel" aria-label="AI 资源子分类" hidden><p>AI 与智能科研 <span>从文献发现到物理机器学习</span></p><div id="ai-subfilters" class="filters"></div><small>文献引用需核对原文，推导和代码需验证；未公开数据按课题组要求处理。</small></section><section id="campus-tip" class="resource-panel" hidden><p>补齐你的校园入口</p><small>添加本校图书馆、校外访问、超算、仪器预约和课题组资料库。链接由你自行填写。</small><button id="add-campus" class="quiet-button">添加校园网站</button></section></template>
   <dialog id="import-dialog" aria-labelledby="import-title"><form method="dialog"><h2 id="import-title">导入收藏</h2><p id="import-summary"></p><p class="import-tip">替换前建议先导出当前收藏。相同网址以现有内容为准，不会覆盖你的编辑。</p><div class="dialog-actions"><button value="cancel" class="quiet-button" autofocus>取消</button><button value="replace" class="quiet-button">替换全部</button><button id="merge-import" value="merge" class="primary-button">合并收藏</button></div></form></dialog>
   <div id="toast" role="status" aria-live="polite" hidden></div>
   <noscript>请启用 JavaScript 以使用收藏、搜索和分类功能。</noscript>

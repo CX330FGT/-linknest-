@@ -14,6 +14,12 @@ function bounded(value, field, limit, required = true) {
 export function validateBookmark(item) {
   if (!item || typeof item !== 'object') throw new Error('收藏格式不正确');
   if (item.pinned !== undefined && typeof item.pinned !== 'boolean') throw new Error('常用收藏标记必须是布尔值');
+  const metadata = {};
+  if (item.subcategory !== undefined) metadata.subcategory = bounded(item.subcategory, '子分类', 30);
+  if (item.tags !== undefined) {
+    if (!Array.isArray(item.tags) || item.tags.length > 12) throw new Error('标签最多 12 个');
+    metadata.tags = item.tags.map(tag => bounded(tag, '标签', 30));
+  }
   return {
     id: bounded(item.id, '标识', 100),
     title: bounded(item.title, '名称', 60),
@@ -21,6 +27,7 @@ export function validateBookmark(item) {
     description: bounded(item.description ?? '', '描述', 180, false),
     category: bounded(item.category, '分类', 30),
     pinned: item.pinned === true,
+    ...metadata,
   };
 }
 export function parseBackup(text) {
@@ -61,9 +68,9 @@ export function mergeBookmarks(current, incoming) {
   serialize(result);
   return { bookmarks: result, added, skipped, renamed };
 }
-export function filterBookmarks(bookmarks, { category = 'all', query = '' } = {}) {
+export function filterBookmarks(bookmarks, { category = 'all', subcategory = '', query = '' } = {}) {
   const terms = query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
-  return bookmarks.filter(item => (category === 'all' || (category === 'pinned' ? item.pinned : item.category === category)) && terms.every(term => `${item.title} ${item.description} ${item.url} ${item.category}`.toLocaleLowerCase().includes(term)));
+  return bookmarks.filter(item => (category === 'all' || (category === 'pinned' ? item.pinned : item.category === category)) && (!subcategory || item.subcategory === subcategory) && terms.every(term => `${item.title} ${item.description} ${item.url} ${item.category} ${item.subcategory ?? ''} ${(item.tags ?? []).join(' ')}`.toLocaleLowerCase().includes(term)));
 }
 export function createSeeds() {
   return [
