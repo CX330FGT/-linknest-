@@ -1,39 +1,31 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="面向力学研究生的科研导航，涵盖文献、仿真、实验、论文写作与 AI 科研工具。支持个人收藏、分类搜索与本地备份。">
-  <meta name="color-scheme" content="light dark">
-  <title>拾光导航 · LinkNest</title>
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css">
-  <script type="module" src="./app.js"></script>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="由你管理的个人导航站。创建分类，在分类中添加网址，支持搜索、主题和本地备份。">
+  <meta name="color-scheme" content="light dark"><title>拾光导航 · LinkNest</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
 </head>
 <body>
   <a class="skip" href="#main">跳到内容</a>
   <aside class="sidebar">
     <a class="brand" href="./"><span class="brand-icon">↗</span><span>拾光导航<small>LINKNEST</small></span></a>
-    <div class="nav-label">我的空间 <span>WORKSPACE</span></div>
+    <div class="nav-label">我的分类 <button id="add-category-side" class="category-plus" aria-label="添加分类" title="添加分类">＋</button></div>
     <nav id="navigation" aria-label="网站分类"></nav>
-    <div class="sidebar-bottom"><div class="local-dot">只属于你的收藏夹</div><p>数据保存在当前浏览器<br>记得偶尔备份一下。</p><button id="export" class="backup-button">↗ 导出我的收藏</button></div>
+    <div class="sidebar-bottom"><div class="local-dot">只属于你的收藏夹</div><p>分类和网址保存在当前浏览器<br>记得偶尔备份一下。</p><button id="export" class="backup-button">↗ 导出我的导航</button></div>
   </aside>
   <div class="workspace">
-    <header class="topbar"><span>我的导航 <span class="crumb">/</span> <span id="breadcrumb">全部网站</span></span><div class="top-actions"><span class="local-badge"><i></i> 本地保存</span><button id="theme" class="icon-button" aria-label="切换深色主题" title="切换主题">◐</button><button id="export-mobile" class="quiet-button mobile-only">导出</button><button id="import" class="quiet-button">导入备份</button></div></header>
+    <header class="topbar"><span>我的导航 <span class="crumb">/</span> <span id="breadcrumb">全部网址</span></span><div class="top-actions"><span class="local-badge"><i></i> 本地保存</span><button id="theme" class="icon-button" aria-label="切换深色主题">◐</button><button id="export-mobile" class="quiet-button mobile-only">导出</button><button id="import" class="quiet-button">导入备份</button></div></header>
     <main id="main">
-      <section class="hero"><div class="eyebrow"><span></span> A LITTLE SPACE, FOR YOUR INTERNET</div><p id="today" class="date"></p><h1>好用的网站，<br>都在<span>这里。</span></h1><p class="hero-description">少一点寻找，多一点专注。<br class="mobile-only">让每一次出发，都有方向。</p><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="art-center">↗</div><span class="art-spark spark-one">✦</span><span class="art-spark spark-two">+</span><div class="art-note">CURATED BY YOU</div></div></section>
-      <div class="view-switch" aria-label="资源范围"><button id="library-view" class="active" aria-pressed="true">科研资源库</button><button id="personal-view" aria-pressed="false">我的收藏</button><span>力学研究生的科研工作台</span></div>
-      <div class="search-row"><label class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索网站、研究方向或 PINNs…" aria-label="搜索网站" autocomplete="off"><kbd>/</kbd></label><button id="add" class="primary-button"><span>＋</span> 添加网站</button></div>
-      <section class="collection" aria-labelledby="collection-title"><div class="section-heading"><div><span class="section-kicker">YOUR COLLECTION</span><h2 id="collection-title">全部网站 <span id="result-count"></span></h2></div><span id="collection-note">把值得再来的地方，留在这里</span></div><div id="filters" class="filters" aria-label="快捷分类"></div><div id="cards" class="cards"></div><div id="empty" class="empty" hidden><span>⌕</span><h3>这里还没有匹配的网站</h3><p>试试其他关键词，或添加一个新的收藏。</p><button id="clear-search" class="quiet-button">查看全部网站</button></div></section>
-      <footer><span><b>LinkNest</b> · 为你的每一次探索，留一扇门。</span><span>力学 × AI × 科研 <span class="footer-star">✦</span></span></footer>
+      <section class="hero"><div class="eyebrow"><span></span> YOUR LINKS, YOUR SPACE</div><p id="today" class="date"></p><h1>你的分类，<br>你的<span>入口。</span></h1><p class="hero-description">从一个分类、一个网址开始，<br class="mobile-only">整理自己的常用空间。</p><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="art-center">↗</div><span class="art-spark spark-one">✦</span><span class="art-spark spark-two">+</span><div class="art-note">CURATED BY YOU</div></div></section>
+      <div class="search-row"><label class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索名称、描述或分类…" aria-label="搜索网址" autocomplete="off"><kbd>/</kbd></label><button id="add-category" class="quiet-button">＋ 添加分类</button><button id="add" class="primary-button">＋ 添加网址</button></div>
+      <section class="collection" aria-labelledby="collection-title"><div class="section-heading"><div><span class="section-kicker">YOUR COLLECTION</span><h2 id="collection-title">全部网址 <span id="result-count">0</span></h2></div><button id="add-in-category" class="quiet-button" hidden>＋ 在此分类添加网址</button></div><div id="filters" class="filters" aria-label="快捷分类"></div><div id="cards" class="cards"></div><div id="empty" class="empty"><span>↗</span><h3 id="empty-title">还没有网址</h3><p id="empty-message">选择分类，添加你的第一个网址。</p><div class="empty-actions"><button id="empty-add" class="primary-button">＋ 添加网址</button><button id="clear-search" class="quiet-button" hidden>清除搜索</button></div></div></section>
+      <footer><span><b>LinkNest</b> · 让常用的地方，都有自己的位置。</span><span>由你整理 <span class="footer-star">✦</span></span></footer>
     </main>
   </div>
-  <dialog id="editor"><form id="bookmark-form"><div class="dialog-heading"><div><span class="section-kicker">MAKE ROOM FOR SOMETHING GOOD</span><h2 id="editor-title">添加网站</h2></div><button class="icon-button" type="button" id="close-editor" aria-label="关闭">×</button></div><label>网站名称<input name="title" required maxlength="60" placeholder="例如：我的灵感库"></label><label>网站地址<input name="url" required maxlength="2048" placeholder="https://example.com" inputmode="url"></label><label>分类<input name="category" required maxlength="30" list="categories" placeholder="选择或输入新分类"><datalist id="categories"></datalist></label><label>一句话描述<textarea name="description" maxlength="180" rows="2" placeholder="为什么想把它留在这里？"></textarea></label><label class="checkbox"><input name="pinned" type="checkbox"> 加入常用收藏</label><p id="form-error" class="form-error" role="alert"></p><div class="dialog-actions"><button id="cancel-editor" type="button" class="quiet-button">取消</button><button class="primary-button" type="submit">保存网站</button></div></form></dialog>
-  <dialog id="confirmation"><form method="dialog"><h2 id="confirm-title">确认操作</h2><p id="confirm-message"></p><div class="dialog-actions"><button value="cancel" class="quiet-button">取消</button><button value="confirm" class="primary-button">确认</button></div></form></dialog>
-  <input id="import-file" type="file" accept="application/json,.json" hidden>
-  <template id="research-panels"><section id="ai-panel" class="resource-panel" aria-label="AI 资源子分类" hidden><p>AI 与智能科研 <span>从文献发现到物理机器学习</span></p><div id="ai-subfilters" class="filters"></div><small>文献引用需核对原文，推导和代码需验证；未公开数据按课题组要求处理。</small></section><section id="campus-tip" class="resource-panel" hidden><p>补齐你的校园入口</p><small>添加本校图书馆、校外访问、超算、仪器预约和课题组资料库。链接由你自行填写。</small><button id="add-campus" class="quiet-button">添加校园网站</button></section></template>
-  <dialog id="import-dialog" aria-labelledby="import-title"><form method="dialog"><h2 id="import-title">导入收藏</h2><p id="import-summary"></p><p class="import-tip">替换前建议先导出当前收藏。相同网址以现有内容为准，不会覆盖你的编辑。</p><div class="dialog-actions"><button value="cancel" class="quiet-button" autofocus>取消</button><button value="replace" class="quiet-button">替换全部</button><button id="merge-import" value="merge" class="primary-button">合并收藏</button></div></form></dialog>
-  <div id="toast" role="status" aria-live="polite" hidden></div>
-  <noscript>请启用 JavaScript 以使用收藏、搜索和分类功能。</noscript>
-</body>
-</html>
+  <dialog id="category-editor" aria-labelledby="category-title"><form id="category-form"><div class="dialog-heading"><h2 id="category-title">添加分类</h2><button type="button" class="icon-button" data-close="category-editor" aria-label="关闭添加分类">×</button></div><label>分类名称<input name="name" required maxlength="30" placeholder="输入分类名称" autocomplete="off"></label><p id="category-error" class="form-error" role="alert"></p><div class="dialog-actions"><button type="button" class="quiet-button" data-close="category-editor">取消</button><button type="submit" class="primary-button">创建分类</button></div></form></dialog>
+  <dialog id="editor" aria-labelledby="editor-title"><form id="bookmark-form"><div class="dialog-heading"><h2 id="editor-title">添加网址</h2><button type="button" class="icon-button" data-close="editor" aria-label="关闭网址编辑">×</button></div><label>网站名称<input name="title" required maxlength="60" placeholder="输入网站名称"></label><label>网址<input name="url" required maxlength="2048" placeholder="输入完整网址或域名" inputmode="url"></label><label>所属分类<select name="categoryId" required></select></label><label>描述（选填）<textarea name="description" maxlength="180" rows="2" placeholder="记下它的用途"></textarea></label><label class="checkbox"><input name="pinned" type="checkbox"> 设为常用</label><p id="form-error" class="form-error" role="alert"></p><div class="dialog-actions"><button type="button" class="quiet-button" data-close="editor">取消</button><button type="submit" class="primary-button">保存网址</button></div></form></dialog>
+  <dialog id="confirmation" aria-labelledby="confirm-title"><form method="dialog"><h2 id="confirm-title">确认操作</h2><p id="confirm-message"></p><div class="dialog-actions"><button value="cancel" class="quiet-button" autofocus>取消</button><button value="confirm" class="primary-button">确认</button></div></form></dialog>
+  <dialog id="import-dialog" aria-labelledby="import-title"><form method="dialog"><h2 id="import-title">导入导航备份</h2><p id="import-summary"></p><p class="import-tip">仅支持新版备份。合并会保留已有分类和网址；替换会覆盖当前导航。</p><div class="dialog-actions"><button value="cancel" class="quiet-button" autofocus>取消</button><button value="replace" class="quiet-button">替换全部</button><button value="merge" class="primary-button">合并导入</button></div></form></dialog>
+  <input id="import-file" type="file" accept=".json,application/json" hidden><div id="toast" role="status" aria-live="polite" hidden></div><noscript>请启用 JavaScript 以创建分类和管理网址。</noscript>
+</body></html>
