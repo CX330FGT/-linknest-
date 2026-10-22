@@ -11,10 +11,23 @@ function bounded(value, field, limit, required = true) {
   if (typeof value !== 'string' || (required && !value.trim()) || value.length > limit) throw new Error(`${field}格式不正确（最多 ${limit} 字）`);
   return value.trim();
 }
+export function validateJournalMetadata(value) {
+  if (!value || !['中国主办', '海外主办'].includes(value.origin)) throw new Error('期刊主办地区不正确');
+  const result = { origin: value.origin, field: bounded(value.field, '期刊方向', 30) };
+  for (const system of ['cas', 'jcr']) {
+    const rank = value[system];
+    if (rank == null) { result[system] = null; continue; }
+    const allowed = system === 'cas' ? [1, 2, 3, 4] : ['Q1', 'Q2', 'Q3', 'Q4'];
+    if (!allowed.includes(rank.zone) || !Number.isInteger(rank.year) || rank.year < 2000 || rank.year > new Date().getFullYear()) throw new Error('分区或数据年份不正确');
+    result[system] = { zone: rank.zone, year: rank.year, category: bounded(rank.category, '分区学科', 100), source: normalizeUrl(rank.source), ...(rank.note ? { note: bounded(rank.note, '分区说明', 180) } : {}) };
+  }
+  return result;
+}
 export function validateBookmark(item) {
   if (!item || typeof item !== 'object') throw new Error('收藏格式不正确');
   if (item.pinned !== undefined && typeof item.pinned !== 'boolean') throw new Error('常用收藏标记必须是布尔值');
   const metadata = {};
+  if (item.journal !== undefined) metadata.journal = validateJournalMetadata(item.journal);
   if (item.subcategory !== undefined) metadata.subcategory = bounded(item.subcategory, '子分类', 30);
   if (item.tags !== undefined) {
     if (!Array.isArray(item.tags) || item.tags.length > 12) throw new Error('标签最多 12 个');

@@ -1,5 +1,6 @@
 import { STORAGE_KEY, normalizeUrl, validateBookmark, parseBackup, serialize, filterBookmarks, createSeeds, mergeBookmarks } from './core.js';
-import { RESEARCH_CATEGORIES, AI_GROUPS, createCatalog } from './catalog.js';
+import { RESEARCH_CATEGORIES, AI_GROUPS, SIMULATION_GROUPS, createCatalog } from './catalog.js';
+import { filterJournals, JOURNAL_SOURCES, applyJournalRankings } from './journals.js';
 import { siteIconUrl } from './icons.js';
 
 const $ = selector => document.querySelector(selector);
@@ -19,7 +20,60 @@ let category = 'all';
 let subcategory = '';
 let view = 'library';
 try { if (sessionStorage.getItem('linknest.view') === 'personal') view = 'personal'; } catch { /* Fall back to the research directory. */ }
-const catalog = createCatalog();
+let catalog = createCatalog();
+const journalFilter = { origin: '', field: '', system: 'cas', tier: '' };
+try {
+  const ranks = localStorage.getItem('linknest.journal-rankings.v1');
+  if (ranks) catalog = [...catalog.filter(item => !item.journal), ...applyJournalRankings(catalog.filter(item => item.journal), ranks)];
+} catch { /* Invalid optional ranking data never changes bookmarks or the base directory. */ }
+const journalPanel = element('section', 'resource-panel journal-panel');
+journalPanel.id = 'journal-panel';
+journalPanel.hidden = true;
+const journalHeading = element('p', '', '期刊分区与方向');
+const journalNote = element('small', '', '同时展示中科院与 JCR；未核实的分区、年份和 SCI 收录状态不作推断。不同学科可能有不同分区，请以当年官方记录为准。');
+const journalControls = element('div', 'journal-controls');
+for (const [name, label, options] of [
+  ['origin', '主办地区', [['', '全部地区'], ['中国主办', '中国主办'], ['海外主办', '海外主办']]],
+  ['field', '研究方向', [['', '全部方向'], ...[...new Set(catalog.filter(item => item.journal).map(item => item.journal.field))].map(value => [value, value])]],
+  ['system', '分区体系', [['cas', '中科院 1–4 区'], ['jcr', 'JCR Q1–Q4']]],
+  ['tier', '分区筛选', [['', '全部分区'], ['pending', '待核验'], ['1', '1 区'], ['2', '2 区'], ['3', '3 区'], ['4', '4 区']]],
+]) {
+  const wrapper = element('label', '', label);
+  const select = document.createElement('select');
+  select.id = `journal-${name}`;
+  for (const [value, text] of options) { const option = element('option', '', text); option.value = value; select.append(option); }
+  select.addEventListener('change', () => {
+    journalFilter[name] = select.value;
+    if (name === 'system') {
+      journalFilter.tier = '';
+      $('#journal-tier').replaceChildren();
+      const values = [['', '全部分区'], ['pending', '待核验'], ...[1,2,3,4].map(value => [select.value === 'cas' ? String(value) : `Q${value}`, select.value === 'cas' ? `${value} 区` : `Q${value}`])];
+      for (const [value, text] of values) { const option = element('option', '', text); option.value = value; $('#journal-tier').append(option); }
+    }
+    renderCards();
+  });
+  wrapper.append(select); journalControls.append(wrapper);
+}
+const journalSources = element('div', 'journal-sources');
+for (const source of JOURNAL_SOURCES) { const link = element('a', '', source.title + ' ↗'); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; journalSources.append(link); }
+const rankImport = element('button', 'quiet-button', '导入已核对的分区数据');
+rankImport.id = 'import-rankings';
+const rankFile = document.createElement('input'); rankFile.type = 'file'; rankFile.accept = '.json,application/json'; rankFile.hidden = true;
+rankFile.id = 'rankings-file';
+rankImport.addEventListener('click', () => rankFile.click());
+rankFile.addEventListener('change', async event => {
+  const file = event.target.files[0]; event.target.value = ''; if (!file) return;
+  try {
+    if (file.size > 1000000) throw new Error('分区文件不能超过 1 MB');
+    const next = applyJournalRankings(catalog.filter(item => item.journal), await file.text());
+    const snapshot = { version: 1, rankings: next.filter(item => item.journal.cas || item.journal.jcr).map(item => ({ id: item.id, cas: item.journal.cas, jcr: item.journal.jcr })) };
+    localStorage.setItem('linknest.journal-rankings.v1', JSON.stringify(snapshot));
+    catalog = [...catalog.filter(item => !item.journal), ...next];
+    render(); toast('分区资料已导入。请按卡片来源核对；导入不代表官方认证。');
+  } catch (error) { toast(error.message || '分区导入失败，原数据未改变'); }
+});
+journalPanel.append(journalHeading, journalNote, journalControls, journalSources, rankImport, rankFile);
+$('#cards').before(journalPanel);
 let editingId = null;
 let storageBlocked = false;
 let toastTimer;
@@ -90,7 +144,8 @@ function action(label, text, callback, className = '') {
 }
 function renderCards() {
   const query = $('#search').value;
-  const visible = filterBookmarks(pool(), { category, subcategory, query });
+  let visible = filterBookmarks(pool(), { category, subcategory, query });
+  if (category === '文献期刊') visible = filterJournals(visible, journalFilter);
   $('#cards').replaceChildren();
   const title = category === 'all' ? '全部网站' : category === 'pinned' ? '常用收藏' : category;
   $('#breadcrumb').textContent = title;
@@ -128,6 +183,14 @@ function renderCards() {
       for (const tag of item.tags) tags.append(element('span', '', tag));
       link.append(tags);
     }
+    if (item.journal) {
+      const ranks = element('div', 'journal-ranks');
+      for (const [system, label] of [['cas', '中科院'], ['jcr', 'JCR']]) {
+        const rank = item.journal[system];
+        ranks.append(element('span', rank ? 'rank-badge rank-recorded' : 'rank-badge', rank ? `${label} ${rank.zone}${system === 'cas' ? ' 区' : ''} · ${rank.year}` : `${label} 待核验`));
+      }
+      link.append(ranks);
+    }
     const bottom = element('div', 'card-bottom');
     const actions = element('div', 'card-actions');
     if (view === 'library') {
@@ -152,6 +215,19 @@ function renderCards() {
       }),
     );
     bottom.append(element('span', 'category-tag', item.subcategory || item.category), actions);
+    if (item.journal) {
+      const rankDetails = element('details', 'rank-details');
+      rankDetails.append(element('summary', '', '分区年份与来源'));
+      for (const [system, label] of [['cas', '中科院'], ['jcr', 'JCR']]) {
+        const rank = item.journal[system];
+        if (!rank) rankDetails.append(element('p', '', `${label}：分区、年份、学科均待核验。`));
+        else {
+          const line = element('p', '', `${label} ${rank.year} · ${rank.category} · ${rank.note || '本地录入，请核对来源'} `);
+          const source = element('a', '', '查看来源 ↗'); source.href = rank.source; source.target = '_blank'; source.rel = 'noopener noreferrer'; line.append(source); rankDetails.append(line);
+        }
+      }
+      card.append(rankDetails);
+    }
     card.append(link, bottom);
     $('#cards').append(card);
   }
@@ -164,14 +240,19 @@ function render() {
   }
   $('#collection-note').textContent = view === 'library' ? '精选科研入口 · 一键加入我的收藏' : '你的编辑与收藏，保存在当前浏览器';
   $('#ai-subfilters').replaceChildren();
-  $('#ai-panel').hidden = category !== 'AI 与智能科研';
-  if (category === 'AI 与智能科研') for (const group of ['', ...AI_GROUPS]) {
-    const button = element('button', `filter${subcategory === group ? ' active' : ''}`, group || '全部 AI 资源');
+  const isAI = category === 'AI 与智能科研', isSimulation = category === '仿真与建模';
+  $('#ai-panel').hidden = !isAI && !isSimulation;
+  $('#ai-panel > p').firstChild.textContent = isSimulation ? '课题组仿真工作流 ' : 'AI 与智能科研 ';
+  $('#ai-panel > p span').textContent = isSimulation ? 'HyperMesh 建模 → LS-DYNA 求解 → LS-PrePost 后处理' : '从文献发现到物理机器学习';
+  $('#ai-panel > small').textContent = isSimulation ? '主力：HyperMesh / LS-DYNA；辅助：COMSOL / Abaqus / SolidWorks / AutoCAD / MATLAB。请按本机版本选择文档。' : '文献引用需核对原文，推导和代码需验证；未公开数据按课题组要求处理。';
+  if (isAI || isSimulation) for (const group of ['', ...(isAI ? AI_GROUPS : SIMULATION_GROUPS)]) {
+    const button = element('button', `filter${subcategory === group ? ' active' : ''}`, group || (isAI ? '全部 AI 资源' : '全部仿真工具'));
     button.setAttribute('aria-pressed', String(subcategory === group));
     button.addEventListener('click', () => { subcategory = group; render(); });
     $('#ai-subfilters').append(button);
   }
   $('#campus-tip').hidden = category !== '校园与课题组';
+  $('#journal-panel').hidden = category !== '文献期刊';
   renderNavigation(); renderCards();
 }
 function openEditor(item = null) {
@@ -202,7 +283,8 @@ $('#bookmark-form').addEventListener('submit', event => {
   try {
     const group = form.elements.namedItem('subcategory').value.trim();
     const tags = form.elements.namedItem('tags').value.split(/[,，]/).map(tag => tag.trim()).filter(Boolean);
-    const item = validateBookmark({ id: editingId ?? crypto.randomUUID(), title: form.elements.namedItem('title').value, url: normalizeUrl(form.elements.namedItem('url').value), category: form.elements.namedItem('category').value, description: form.elements.namedItem('description').value, pinned: form.elements.namedItem('pinned').checked, ...(group ? { subcategory: group } : {}), ...(tags.length ? { tags } : {}) });
+    const original = bookmarks.find(bookmark => bookmark.id === editingId);
+    const item = validateBookmark({ id: editingId ?? crypto.randomUUID(), title: form.elements.namedItem('title').value, url: normalizeUrl(form.elements.namedItem('url').value), category: form.elements.namedItem('category').value, description: form.elements.namedItem('description').value, pinned: form.elements.namedItem('pinned').checked, ...(group ? { subcategory: group } : {}), ...(tags.length ? { tags } : {}), ...(original?.journal ? { journal: original.journal } : {}) });
     if (bookmarks.some(bookmark => bookmark.id !== item.id && bookmark.url === item.url)) throw new Error('这个网站已经收藏过了，可以直接编辑已有收藏。');
     const next = editingId ? bookmarks.map(bookmark => bookmark.id === editingId ? item : bookmark) : [...bookmarks, item];
     if (!persist(next)) return;

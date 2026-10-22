@@ -1,6 +1,6 @@
 # 力学与 AI 科研资源库
 
-目录维护日期：2026-10-22。当前共 43 个入口，其中 AI 资源 22 个。
+目录维护日期：2026-10-22。当前共 180 个入口，其中 AI 资源 22 个，期刊 128 本。期刊范围和分区状态见 [期刊说明](journals.md)。
 
 ## 分类
 
@@ -9,7 +9,8 @@
 | AI 与智能科研 | 22 | 通用助手、AI 文献发现、AI 编程、机器学习框架、物理与科学机器学习、课程资料 |
 | 文献检索 | 4 | Google Scholar、Web of Science、知网、arXiv |
 | 理论与课程 | 2 | MIT 固体力学与流体力学公开课 |
-| 仿真与建模 | 5 | Abaqus、Ansys、COMSOL、OpenFOAM、Gmsh |
+| 仿真与建模 | 14 | 主力 HyperMesh / LS-DYNA，辅助 COMSOL / Abaqus / SolidWorks / AutoCAD / MATLAB，以及其他工具 |
+| 文献期刊 | 128 | 力学及常见交叉方向，按主办地区、研究方向和双分区筛选 |
 | 编程与数值计算 | 3 | MATLAB、SciPy、FEniCS |
 | 实验与数据资源 | 3 | JHTDB 数值模拟数据、NIST DIC 评估资料、Zenodo |
 | 绘图与后处理 | 2 | Matplotlib、ParaView |

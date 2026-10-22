@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "rankings": [
+    {
+      "id": "journal-arfm",
+      "cas": null,
+      "jcr": {
+        "zone": "Q1",
+        "year": 2026,
+        "category": "Mechanics",
+        "source": "https://www.annualreviews.org/about/impact-factors",
+        "note": "2026 JCR 版本，2025 年引文数据。出版方公开排名 1/172，据此判定 Q1；不是中科院分区。"
+      }
+    }
+  ]
+}

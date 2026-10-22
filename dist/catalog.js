@@ -1,10 +1,21 @@
 import { normalizeUrl } from './core.js';
+import { createJournals } from './journals.js';
 
-export const RESEARCH_CATEGORIES = ['AI 与智能科研', '文献检索', '理论与课程', '仿真与建模', '编程与数值计算', '实验与数据资源', '绘图与后处理', '论文写作与文献管理', '校园与课题组'];
+export const RESEARCH_CATEGORIES = ['仿真与建模', '文献期刊', 'AI 与智能科研', '文献检索', '理论与课程', '编程与数值计算', '实验与数据资源', '绘图与后处理', '论文写作与文献管理', '校园与课题组'];
 export const AI_GROUPS = ['通用 AI 助手', 'AI 文献发现', 'AI 编程助手', '机器学习框架', '物理与科学机器学习', '课程与学习资料'];
+export const SIMULATION_GROUPS = ['主力 · HyperMesh', '主力 · LS-DYNA', '辅助 · COMSOL', '辅助 · Abaqus', '辅助 · SolidWorks', '辅助 · CAD', '辅助 · MATLAB', '其他仿真工具'];
 
 // Editorial directory; independent of the user's local bookmarks.
 const entries = [
+  ['hypermesh','HyperMesh 官方帮助','https://help.altair.com/hwdesktop/hwx/index.htm','课题组主力前处理：几何清理、网格划分、材料与 LS-DYNA 求解器接口。','仿真与建模','主力 · HyperMesh',['主力','前处理','网格','LS-DYNA']],
+  ['hypermesh-dyna','HyperMesh → LS-DYNA 接口','https://2023.help.altair.com/2023/hwdesktop/hwx/topics/pre_processing/interfacing/lsdyna_interface_overview.htm','LS-DYNA 关键字模型的导入、卡片编辑与导出；文档版本需对应本机软件。','仿真与建模','主力 · HyperMesh',['关键字','建模流程','前处理']],
+  ['lsdyna','LS-DYNA 官方入口','https://lsdyna.ansys.com/','课题组主力求解器：显式动力学、冲击碰撞、材料与多物理场分析。','仿真与建模','主力 · LS-DYNA',['主力','冲击','显式动力学']],
+  ['lsdyna-manual','LS-DYNA 关键字与理论手册','https://lsdyna.ansys.com/manuals/','查找关键字、材料模型和理论说明，使用与求解器版本匹配的手册。','仿真与建模','主力 · LS-DYNA',['材料卡','接触','关键字']],
+  ['lsdyna-examples','LS-DYNA 算例库','https://www.dynaexamples.com/','教学算例与输入文件，用于练习和验证；算例参数不直接替代真实材料标定。','仿真与建模','主力 · LS-DYNA',['算例','SPH','ALE']],
+  ['lsprepost','LS-PrePost','https://lsdyna.ansys.com/ls-prepost/','LS-DYNA 模型检查与结果后处理入口。','仿真与建模','主力 · LS-DYNA',['后处理','d3plot','模型检查']],
+  ['solidworks','SolidWorks 官方帮助','https://help.solidworks.com/','课题组辅助工具：三维零件、装配和几何建模，按本机版本选择帮助。','仿真与建模','辅助 · SolidWorks',['三维建模','装配','几何']],
+  ['autocad','AutoCAD 支持与文档','https://www.autodesk.com/support/technical/product/autocad','CAD 暂按 AutoCAD 收录：二维图纸、几何和技术文档。','仿真与建模','辅助 · CAD',['AutoCAD','二维绘图','CAD']],
+  ['matlab-modeling','MATLAB 建模与数据处理','https://www.mathworks.com/help/matlab/','课题组辅助工具：数据处理、参数标定、脚本与数值计算。','仿真与建模','辅助 · MATLAB',['参数识别','脚本','后处理']],
   ['scholar', 'Google Scholar', 'https://scholar.google.com/', '检索学术论文，追踪引用与相关研究。', '文献检索', '', ['论文', '引用']],
   ['wos', 'Web of Science', 'https://www.webofscience.com/', '文献检索与引文分析，全文权限以学校订阅为准。', '文献检索', '', ['SCI', '引文']],
   ['cnki', '中国知网', 'https://www.cnki.net/', '检索中文期刊与学位论文，部分资源需要机构权限。', '文献检索', '', ['中文', '学位论文']],
@@ -51,8 +62,11 @@ const entries = [
 ];
 
 export function createCatalog() {
-  return entries.map(([id, title, url, description, category, subcategory, tags]) => ({
+  const resources = entries.map(([id, title, url, description, category, subcategory, tags]) => ({
     id: `resource-${id}`, title, url: normalizeUrl(url), description, category, pinned: false,
     ...(subcategory ? { subcategory } : {}), tags: [...tags],
   }));
+  const groups = { 'resource-comsol': '辅助 · COMSOL', 'resource-abaqus': '辅助 · Abaqus' };
+  for (const item of resources) if (item.category === '仿真与建模' && !item.subcategory) item.subcategory = groups[item.id] ?? '其他仿真工具';
+  return [...resources, ...createJournals()];
 }
